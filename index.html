@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+  <title>Summit — Rope Climbing Adventure</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+</head>
+<body>
+
+<!-- CANVAS STACK -->
+<canvas id="gameCanvas"></canvas>
+<canvas id="aimCanvas"></canvas>
+
+<!-- ─── LOAD SCREEN ─────────────────────────────── -->
+<div id="loadScreen">
+  <h1>⛰ SUMMIT</h1>
+  <p>loading world...</p>
+  <div style="width:200px;height:4px;background:rgba(244,197,66,0.15);border-radius:4px;overflow:hidden;margin-top:8px">
+    <div id="loadBar" style="height:100%;width:0%;background:#f4c542;border-radius:4px;transition:width 0.4s"></div>
+  </div>
+</div>
+
+<!-- ─── HUD ─────────────────────────────────────── -->
+<div id="hud">
+  <div class="hud-panel">
+    <div class="hud-title">Altitude</div>
+    <div class="hud-value" id="altValue" style="color:#88d4ff">0m</div>
+  </div>
+
+  <div class="hud-panel" style="text-align:center">
+    <div class="hud-title">Wind</div>
+    <div class="hud-value" id="windValue" style="font-size:16px;color:#a8d8ff">— 0.0</div>
+  </div>
+
+  <div class="hud-panel" style="text-align:right">
+    <div class="hud-title">Coins</div>
+    <div class="hud-value"><span id="coinsValue">30</span> 🪙</div>
+  </div>
+</div>
+
+<!-- Stamina bar (separate, bottom of HUD) -->
+<div style="position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:10;pointer-events:none">
+  <div style="display:flex;align-items:center;gap:8px;background:rgba(20,14,8,0.7);border:2px solid rgba(139,105,20,0.5);border-radius:20px;padding:5px 14px">
+    <span style="font-size:14px">💪</span>
+    <div style="width:80px;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden">
+      <div id="staminaBar" style="height:100%;width:100%;background:linear-gradient(90deg,#5a9e3a,#8adf5a);border-radius:3px;transition:width 0.15s"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── POWER METER ──────────────────────────────── -->
+<div id="powerMeter">
+  <div id="powerFill"></div>
+</div>
+
+<!-- ─── INVENTORY BAR ────────────────────────────── -->
+<div id="inventoryBar"></div>
+
+<!-- ─── CONTROLS ─────────────────────────────────── -->
+<div id="controls">
+  <!-- D-PAD left -->
+  <div class="ctrl-group" style="flex-direction:column;align-items:flex-start;gap:6px">
+    <div class="ctrl-group">
+      <button class="ctrl-btn" id="btnLeft" style="border-radius:50%">◀</button>
+      <button class="ctrl-btn" id="btnRight" style="border-radius:50%">▶</button>
+    </div>
+    <div class="ctrl-group">
+      <button class="ctrl-btn" id="btnUp" style="border-radius:50%">▲</button>
+    </div>
+  </div>
+
+  <!-- Center: Camp button (hidden until near camp) -->
+  <div style="pointer-events:all;display:flex;flex-direction:column;align-items:center;gap:8px">
+    <button class="ctrl-btn" id="enterCampBtn" style="display:none;width:auto;border-radius:14px;padding:0 18px;font-size:14px;height:50px;background:rgba(90,158,58,0.3);border-color:#5a9e3a;font-family:'Pixelify Sans',monospace;letter-spacing:1px">
+      ⛺ Enter Camp
+    </button>
+    <div style="color:rgba(240,232,208,0.25);font-size:10px;font-family:'Pixelify Sans',monospace;letter-spacing:2px;text-align:center">
+      HOLD RIGHT→AIM<br>RELEASE→THROW
+    </div>
+  </div>
+
+  <!-- Action buttons right -->
+  <div class="ctrl-group" style="flex-direction:column;align-items:flex-end;gap:6px">
+    <div class="ctrl-group">
+      <button class="ctrl-btn big" id="btnJump">↑</button>
+    </div>
+    <div class="ctrl-group">
+      <button class="ctrl-btn" id="btnRetract" style="font-size:14px;font-family:'Pixelify Sans',monospace">🪢 IN</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CAMP OVERLAY ─────────────────────────────── -->
+<div id="campOverlay">
+  <div id="campPanel">
+    <button class="close-camp" id="closeCampBtn">✕</button>
+    <h2>⛺ Mountain Camp</h2>
+    <div class="subtitle">REST • SELL • UPGRADE</div>
+    <div id="campContent"><!-- rendered by JS --></div>
+  </div>
+</div>
+
+<!-- ─── DEATH SCREEN ──────────────────────────────── -->
+<div id="deathScreen">
+  <h2>💀 You Fell</h2>
+  <p>The mountain humbles us all.</p>
+  <p style="font-size:13px;opacity:0.4;margin-top:-8px">You kept half your coins.</p>
+  <button class="restart-btn" id="restartBtn">⛰ Try Again</button>
+</div>
+
+<!-- ─── TOAST ────────────────────────────────────── -->
+<div id="toast"></div>
+
+<!-- ─── SCRIPTS ──────────────────────────────────── -->
+<script src="physics.js"></script>
+<script src="world.js"></script>
+<script src="engine.js"></script>
+<script src="game.js"></script>
+<script>
+  // Boot sequence
+  window.addEventListener('load', () => {
+    const canvas = document.getElementById('gameCanvas');
+    const aimCanvas = document.getElementById('aimCanvas');
+    Engine.init(canvas, aimCanvas);
+
+    // Fake load progress
+    let progress = 0;
+    const bar = document.getElementById('loadBar');
+    const loadInterval = setInterval(() => {
+      progress += Math.random() * 18;
+      bar.style.width = Math.min(90, progress) + '%';
+      if (progress >= 90) clearInterval(loadInterval);
+    }, 80);
+
+    // Init world + game
+    setTimeout(() => {
+      Game.init();
+      bar.style.width = '100%';
+      setTimeout(() => {
+        const ls = document.getElementById('loadScreen');
+        ls.style.opacity = '0';
+        setTimeout(() => ls.style.display = 'none', 600);
+      }, 300);
+    }, 800);
+
+    // Stamina bar update
+    setInterval(() => {
+      const game = window._gamePlayer;
+      const stEl = document.getElementById('staminaBar');
+      // Hacky: read from physics via game loop (updated in game.js loop)
+    }, 100);
+  });
+
+  // Handle resize
+  window.addEventListener('resize', () => Engine.resize?.());
+</script>
+</body>
+</html>
