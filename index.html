@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ASCENT — The Infinite Mountain</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=IM+Fell+English:ital@0;1&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- MAIN MENU -->
+<div id="mainMenu" class="screen">
+  <div class="menu-bg">
+    <canvas id="menuCanvas"></canvas>
+    <div class="snow-overlay"></div>
+  </div>
+  <div class="menu-content">
+    <div class="title-block">
+      <div class="title-sub">somewhere above the clouds</div>
+      <h1 class="game-title">ASCENT</h1>
+      <div class="title-tagline">the mountain does not care if you return</div>
+    </div>
+    <div class="menu-buttons">
+      <button class="menu-btn primary" id="btnNewGame">Begin the Climb</button>
+      <button class="menu-btn" id="btnContinue">Continue Ascent</button>
+      <button class="menu-btn" id="btnLore">The Old Letters</button>
+      <button class="menu-btn dim" id="btnCredits">Credits</button>
+    </div>
+    <div class="menu-footer">
+      <span class="altitude-record">Highest reached: <span id="recordAlt">0m</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- LORE SCREEN -->
+<div id="loreScreen" class="screen">
+  <div class="lore-container">
+    <div class="lore-header">
+      <h2>Letters Found on the Mountain</h2>
+      <button class="close-btn" id="closeLore">✕</button>
+    </div>
+    <div class="lore-list" id="loreList">
+      <!-- populated by lore.js -->
+    </div>
+  </div>
+</div>
+
+<!-- CREDITS -->
+<div id="creditsScreen" class="screen">
+  <div class="credits-container">
+    <h2>ASCENT</h2>
+    <p class="credits-text">
+      A game about going up.<br><br>
+      The mountain was here before memory.<br>
+      It will be here after.<br><br>
+      <em>For everyone still climbing.</em>
+    </p>
+    <button class="menu-btn" id="closeCredits">Return</button>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="gameScreen" class="screen">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-left">
+      <div class="hud-stat">
+        <span class="hud-label">ALT</span>
+        <span class="hud-value" id="hudAlt">0m</span>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-label">TEMP</span>
+        <span class="hud-value" id="hudTemp">−2°</span>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-label">STAMINA</span>
+        <div class="bar-outer"><div class="bar-inner stamina-bar" id="staminaBar"></div></div>
+      </div>
+    </div>
+    <div class="hud-center">
+      <div class="next-camp-info" id="nextCampInfo">
+        <span class="hud-label">NEXT CAMP</span>
+        <span class="hud-value" id="nextCampDist">---</span>
+      </div>
+    </div>
+    <div class="hud-right">
+      <button class="hud-btn" id="btnInventory">⚒</button>
+      <div class="hud-stat">
+        <span class="hud-label">COINS</span>
+        <span class="hud-value" id="hudCoins">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLS (touch) -->
+  <div id="touchControls">
+    <div id="leftControls">
+      <button class="ctrl-btn" id="ctrlLeft" data-action="left">◀</button>
+      <button class="ctrl-btn" id="ctrlRight" data-action="right">▶</button>
+    </div>
+    <div id="rightControls">
+      <button class="ctrl-btn large" id="ctrlRope" data-action="rope">⚓<br><small>ROPE</small></button>
+      <button class="ctrl-btn" id="ctrlPickaxe" data-action="pickaxe">⛏</button>
+      <button class="ctrl-btn" id="ctrlJump" data-action="jump">↑</button>
+    </div>
+  </div>
+
+  <!-- WIND indicator -->
+  <div id="windIndicator">
+    <span id="windArrow">→</span>
+    <span id="windSpeed">0</span>
+  </div>
+</div>
+
+<!-- CAMP / SHOP SCREEN -->
+<div id="campScreen" class="screen">
+  <div class="camp-container">
+    <div class="camp-header">
+      <div class="camp-fire">🔥</div>
+      <div>
+        <h2 id="campName">Base Camp</h2>
+        <p class="camp-alt" id="campAltDisplay">Altitude: 0m</p>
+      </div>
+      <div class="camp-coins">
+        <span>⬡</span>
+        <span id="campCoins">0</span>
+      </div>
+    </div>
+
+    <!-- Lore fragment that appears at camp -->
+    <div class="lore-fragment" id="campLoreFragment"></div>
+
+    <div class="camp-tabs">
+      <button class="tab-btn active" data-tab="sell">SELL</button>
+      <button class="tab-btn" data-tab="buy">BUY</button>
+      <button class="tab-btn" data-tab="upgrades">UPGRADES</button>
+    </div>
+
+    <div class="tab-content" id="tabSell">
+      <div class="inventory-grid" id="sellGrid"><!-- populated --></div>
+      <button class="sell-all-btn" id="sellAllBtn">Sell All Found Items</button>
+    </div>
+    <div class="tab-content hidden" id="tabBuy">
+      <div class="shop-grid" id="buyGrid"><!-- populated --></div>
+    </div>
+    <div class="tab-content hidden" id="tabUpgrades">
+      <div class="upgrade-list" id="upgradeList"><!-- populated --></div>
+    </div>
+
+    <div class="camp-actions">
+      <button class="camp-btn danger" id="btnDescend">⬇ Descend (Save &amp; Menu)</button>
+      <button class="camp-btn primary" id="btnContinueClimb">Continue Climbing ↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION overlay -->
+<div id="notification" class="notification hidden"></div>
+
+<!-- DEATH SCREEN -->
+<div id="deathScreen" class="screen">
+  <div class="death-container">
+    <h2 class="death-title">You fell.</h2>
+    <p class="death-sub" id="deathMessage">The mountain remembers nothing.</p>
+    <p class="death-alt">You reached <span id="deathAlt">0m</span></p>
+    <div class="death-found" id="deathFoundItems"></div>
+    <button class="menu-btn primary" id="btnTryAgain">Rise Again</button>
+    <button class="menu-btn" id="btnDeathMenu">Return to Mist</button>
+  </div>
+</div>
+
+<script src="lore.js"></script>
+<script src="items.js"></script>
+<script src="world.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
