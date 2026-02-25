@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+<meta name="mobile-web-app-capable" content="yes">
+<title>ASCENT</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --c-bg: #05070e;
+  --c-text: #dcd4be;
+  --c-sub: #7a7260;
+  --c-accent: #c07828;
+  --c-gold: #e8b840;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--c-bg);
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+canvas {
+  display: block;
+  position: fixed;
+  inset: 0;
+  touch-action: none;
+}
+
+/* ─── LOADING SCREEN ─── */
+#loading {
+  position: fixed; inset: 0;
+  background: var(--c-bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 100;
+  transition: opacity 1s ease;
+  overflow: hidden;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+#loading.out { opacity: 0; pointer-events: none; }
+
+/* Animated grain texture */
+#loading::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.load-mountain {
+  width: min(340px, 88vw);
+  margin-bottom: 24px;
+  opacity: 0;
+  animation: fadeUp 1s ease 0.3s forwards;
+}
+
+.load-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(44px, 13vw, 80px);
+  color: var(--c-text);
+  letter-spacing: 0.12em;
+  text-shadow:
+    0 0 60px rgba(200, 150, 40, 0.5),
+    0 0 120px rgba(200, 100, 20, 0.25),
+    0 3px 0 rgba(120, 80, 10, 0.8);
+  opacity: 0;
+  animation: fadeUp 0.9s ease 0.5s forwards;
+}
+
+.load-sub {
+  color: var(--c-sub);
+  font-size: clamp(10px, 2.5vw, 13px);
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  margin-top: 10px;
+  opacity: 0;
+  animation: fadeUp 0.8s ease 0.8s forwards;
+}
+
+.progress-wrap {
+  width: min(240px, 65vw);
+  margin-top: 36px;
+  opacity: 0;
+  animation: fadeUp 0.7s ease 1s forwards;
+}
+
+.progress-track {
+  height: 2px;
+  background: #1a1810;
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8a5010, #e8b840, #c07828);
+  animation: progFill 1.8s cubic-bezier(0.2,0,0.4,1) 0.8s forwards;
+  width: 0%;
+}
+
+.load-status {
+  font-size: 10px;
+  color: var(--c-sub);
+  letter-spacing: 0.35em;
+  margin-top: 10px;
+  text-align: center;
+  animation: blink 1.4s step-start infinite;
+}
+
+.load-hints {
+  position: absolute;
+  bottom: max(28px, env(safe-area-inset-bottom, 20px));
+  color: #3a3428;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-align: center;
+  opacity: 0;
+  animation: fadeIn 0.8s ease 1.6s forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+@keyframes progFill {
+  to { width: 100%; }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+
+/* ─── DEATH SCREEN ─── */
+#death-screen {
+  position: fixed; inset: 0;
+  background: rgba(3,2,5,0);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 50;
+  pointer-events: none;
+  transition: background 1s ease;
+  font-family: 'Share Tech Mono', monospace;
+}
+#death-screen.show {
+  background: rgba(3,2,5,0.88);
+  pointer-events: all;
+}
+#death-screen .dt { color: #c04040; font-size: 32px; letter-spacing: 0.2em; }
+#death-screen .ds { color: #5a4840; font-size: 12px; margin-top: 12px; letter-spacing: 0.3em; }
+#death-screen button {
+  margin-top: 30px;
+  background: none;
+  border: 1px solid #5a4030;
+  color: #c07828;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  padding: 12px 32px;
+  cursor: pointer;
+  pointer-events: all;
+  border-radius: 3px;
+  -webkit-tap-highlight-color: transparent;
+}
+#death-screen button:active { background: rgba(200,120,40,0.15); }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <!-- SVG Mountain Illustration -->
+  <svg class="load-mountain" viewBox="0 0 340 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="sk" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#03050c"/>
+        <stop offset="100%" stop-color="#0d1828"/>
+      </linearGradient>
+      <linearGradient id="mfar" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0c1422"/>
+        <stop offset="100%" stop-color="#060c14"/>
+      </linearGradient>
+      <linearGradient id="mrock" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#2a2e3c"/>
+        <stop offset="100%" stop-color="#141620"/>
+      </linearGradient>
+      <linearGradient id="snow" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#e8f0f8"/>
+        <stop offset="100%" stop-color="#b8ccd8"/>
+      </linearGradient>
+      <radialGradient id="mglow" cx="78%" cy="12%" r="18%">
+        <stop offset="0%" stop-color="rgba(220,235,255,0.22)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+      </radialGradient>
+      <radialGradient id="fire" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="rgba(255,160,40,0.7)"/>
+        <stop offset="100%" stop-color="rgba(200,60,10,0)"/>
+      </radialGradient>
+    </defs>
+
+    <!-- Sky -->
+    <rect width="340" height="180" fill="url(#sk)"/>
+    <!-- Glow from moon -->
+    <rect width="340" height="180" fill="url(#mglow)"/>
+
+    <!-- Stars -->
+    <circle cx="18" cy="12" r="1" fill="rgba(200,218,255,0.7)"/>
+    <circle cx="60" cy="7" r="1.5" fill="rgba(210,225,255,0.5)"/>
+    <circle cx="105" cy="18" r="1" fill="rgba(200,218,255,0.6)"/>
+    <circle cx="150" cy="9" r="1" fill="rgba(215,228,255,0.8)"/>
+    <circle cx="195" cy="15" r="1.5" fill="rgba(200,218,255,0.4)"/>
+    <circle cx="235" cy="6" r="1" fill="rgba(210,222,255,0.7)"/>
+    <circle cx="270" cy="20" r="1" fill="rgba(200,218,255,0.5)"/>
+    <circle cx="310" cy="10" r="1.5" fill="rgba(215,230,255,0.6)"/>
+    <circle cx="328" cy="24" r="1" fill="rgba(200,218,255,0.4)"/>
+
+    <!-- Moon -->
+    <circle cx="268" cy="26" r="12" fill="rgba(215,228,252,0.88)"/>
+    <circle cx="272" cy="23" r="9.5" fill="#06080e"/>
+
+    <!-- Far mountain silhouettes -->
+    <path d="M0 120 L45 58 L90 95 L130 44 L175 82 L215 38 L255 72 L295 40 L340 78 L340 180 L0 180Z" fill="url(#mfar)"/>
+
+    <!-- Main mountain -->
+    <path d="M50 180 L170 22 L290 180Z" fill="url(#mrock)"/>
+    <!-- Snow cap -->
+    <path d="M155 48 L170 22 L185 48 L179 64 L161 61Z" fill="url(#snow)"/>
+    <!-- Rock strata -->
+    <path d="M98 148 L130 108 L160 88 L192 108 L224 148" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1.5"/>
+    <path d="M112 165 L142 124 L168 108 L196 124 L228 165" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1.5"/>
+
+    <!-- Left mountain face highlight -->
+    <path d="M50 180 L170 22 L160 26 L60 180Z" fill="rgba(255,255,255,0.03)"/>
+
+    <!-- Pine trees on slope -->
+    <path d="M97 148 L92 130 L100 130 L95 116 L102 116 L97 104Z" fill="#1e3820"/>
+    <path d="M107 148 L102 128 L111 128 L105 114 L113 114 L107 102Z" fill="#243e28"/>
+    <path d="M225 148 L220 131 L228 131 L222 117 L230 117 L225 105Z" fill="#1e3820"/>
+
+    <!-- Small cabin on ledge -->
+    <rect x="120" y="118" width="34" height="22" fill="#1e1408"/>
+    <path d="M117 118 L137 104 L157 118Z" fill="#140e04"/>
+    <!-- Snow on cabin roof -->
+    <path d="M117 118 L137 104 L140 106 L120 120Z" fill="rgba(200,220,240,0.55)"/>
+    <!-- Warm cabin window -->
+    <rect x="123" y="123" width="10" height="8" fill="rgba(255,175,50,0.7)"/>
+    <!-- Window glow -->
+    <circle cx="128" cy="127" r="16" fill="rgba(255,140,30,0.12)"/>
+    <!-- Door -->
+    <rect x="143" y="128" width="8" height="12" fill="#0e0a04"/>
+
+    <!-- Chimney smoke -->
+    <circle cx="153" cy="100" r="5" fill="rgba(150,155,175,0.22)"/>
+    <circle cx="155" cy="90" r="7" fill="rgba(150,155,175,0.15)"/>
+    <circle cx="153" cy="80" r="9" fill="rgba(150,155,175,0.09)"/>
+
+    <!-- Rope climber -->
+    <line x1="169" y1="54" x2="164" y2="74" stroke="#c8a040" stroke-width="1.5"/>
+    <circle cx="164" cy="52" r="3" fill="#c8a040"/>
+    <rect x="162" y="74" width="4" height="8" fill="#4a5a7c"/>
+    <circle cx="164" cy="72" r="3" fill="#c4846a"/>
+
+    <!-- Ground snow -->
+    <rect x="0" y="172" width="340" height="8" fill="rgba(200,220,238,0.55)"/>
+
+    <!-- Foreground pine -->
+    <path d="M22 175 L16 154 L26 154 L18 138 L28 138 L20 124Z" fill="#1a3018"/>
+    <path d="M316 175 L310 152 L320 152 L313 137 L322 137 L315 122Z" fill="#1a3018"/>
+
+    <!-- Vignette -->
+    <radialGradient id="vig" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="rgba(0,0,0,0)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0.55)"/>
+    </radialGradient>
+    <rect width="340" height="180" fill="url(#vig)"/>
+  </svg>
+
+  <div class="load-title">ASCENT</div>
+  <div class="load-sub">Climb. Discover. Endure.</div>
+
+  <div class="progress-wrap">
+    <div class="progress-track">
+      <div class="progress-fill"></div>
+    </div>
+    <div class="load-status">GENERATING MOUNTAIN</div>
+  </div>
+
+  <div class="load-hints">DRAG LEFT TO MOVE &nbsp;&bull;&nbsp; DRAG RIGHT TO AIM ROPE &nbsp;&bull;&nbsp; RELEASE TO THROW</div>
+</div>
+
+<!-- Death screen -->
+<div id="death-screen">
+  <div class="dt">YOU FELL</div>
+  <div class="ds">THE MOUNTAIN REMAINS</div>
+  <button id="restart-btn">TRY AGAIN</button>
+</div>
+
+<!-- Canvas -->
+<canvas id="c"></canvas>
+
+<!-- Scripts -->
+<script src="world.js"></script>
+<script src="physics.js"></script>
+<script src="entities.js"></script>
+<script src="ui.js"></script>
+<script src="game.js"></script>
+
+<script>
+  // Remove loading after game init
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const el = document.getElementById('loading');
+      el.classList.add('out');
+      setTimeout(() => el.remove(), 1100);
+    }, 2000);
+  });
+
+  // Restart
+  document.getElementById('restart-btn').addEventListener('click', () => {
+    document.getElementById('death-screen').classList.remove('show');
+    Game.init();
+  });
+
+  // Prevent scroll/zoom
+  document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+  document.addEventListener('contextmenu', e => e.preventDefault());
+
+  // Safe area padding for notched phones/iPads
+  document.documentElement.style.setProperty('--sat', `env(safe-area-inset-top, 0px)`);
+  document.documentElement.style.setProperty('--sab', `env(safe-area-inset-bottom, 0px)`);
+</script>
+</body>
+</html>
