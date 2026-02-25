@@ -591,33 +591,6 @@
     .death-btn.secondary { border-color: var(--text-dim); color: var(--text-dim); }
     .death-btn.secondary:hover { background: var(--text-dim); color: #1a0a00; }
 
-    /* Loading */
-    #loading {
-      position: fixed;
-      inset: 0;
-      background: #050510;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 150;
-      transition: opacity 0.5s;
-    }
-
-    #loading.done { opacity: 0; pointer-events: none; }
-
-    .loading-text {
-      font-family: 'Press Start 2P', monospace;
-      color: var(--accent);
-      font-size: 12px;
-      animation: blink 1s step-end infinite;
-    }
-
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-  </style>
-</head>
-<body>
-
-<div id="loading"><div class="loading-text">LOADING...</div></div>
 
 <!-- Title Screen -->
 <div id="titleScreen">
